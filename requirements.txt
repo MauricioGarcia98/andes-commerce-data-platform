@@ -1,0 +1,2 @@
+# Esta primera entrega usa exclusivamente la librería estándar de Python.
+# Dependencias opcionales futuras para notebooks / validación se agregarán cuando el proyecto las necesite.

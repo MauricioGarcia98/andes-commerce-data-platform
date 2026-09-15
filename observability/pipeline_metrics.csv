@@ -1,0 +1,4 @@
+run_id,pipeline_name,records_in,records_out,records_rejected,dq_score,duration_seconds
+DEMO-20260914-001,andes_commerce_e2e,28583,28583,0,100.0,70
+DEMO-20260914-002,andes_commerce_e2e,28583,28392,191,99.1,41
+DEMO-20260914-003,andes_commerce_e2e,28583,28583,0,100.0,63

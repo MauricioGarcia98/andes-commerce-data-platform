@@ -1,0 +1,13 @@
+store_id,store_name,city,region,channel,active_flag
+STORE-0001,Andes Store 01,Mar del Plata,Buenos Aires,STORE,True
+STORE-0002,Andes Store 02,Buenos Aires,AMBA,STORE,True
+STORE-0003,Andes Store 03,Buenos Aires,AMBA,STORE,True
+STORE-0004,Andes Store 04,Mar del Plata,Buenos Aires,STORE,True
+STORE-0005,Andes Store 05,Rosario,Litoral,STORE,True
+STORE-0006,Andes Store 06,Córdoba,Centro,STORE,True
+STORE-0007,Andes Store 07,Córdoba,Centro,STORE,True
+STORE-0008,Andes Store 08,Córdoba,Centro,STORE,True
+STORE-0009,Andes Store 09,Mar del Plata,Buenos Aires,STORE,True
+STORE-0010,Andes Store 10,Buenos Aires,AMBA,STORE,True
+STORE-0011,Andes Store 11,Mar del Plata,Buenos Aires,STORE,True
+STORE-0012,Andes Store 12,Mar del Plata,Buenos Aires,STORE,True

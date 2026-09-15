@@ -1,0 +1,5 @@
+incident_id,type,column,expected_behavior
+INC-DQ-001,DUPLICATE,order_id,Reject duplicate key and preserve evidence.
+INC-DQ-002,REFERENTIAL_INTEGRITY,customer_id,Fail the relationship check and quarantine the record.
+INC-DQ-003,DOMAIN_RULE,total_amount,Reject negative monetary value.
+INC-DQ-004,INVALID_ENUM,status,Reject unsupported status value.

@@ -1,0 +1,4 @@
+run_id,pipeline_name,start_time_utc,end_time_utc,status,stage,exit_code,error_message
+DEMO-20260914-001,andes_commerce_e2e,2026-09-14T19:00:00Z,2026-09-14T19:01:10Z,SUCCESS,silver,0,
+DEMO-20260914-002,andes_commerce_e2e,2026-09-14T20:00:00Z,2026-09-14T20:00:41Z,FAILED,silver,1,"DQ threshold exceeded"
+DEMO-20260914-003,andes_commerce_e2e,2026-09-14T20:15:00Z,2026-09-14T20:16:03Z,SUCCESS,gold,0,
