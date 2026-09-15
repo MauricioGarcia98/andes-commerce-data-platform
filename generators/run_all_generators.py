@@ -10,6 +10,7 @@ scripts = [
     "generate_promotions.py",
     "generate_orders.py",
     "generate_order_items.py",
+    "reconcile_order_totals.py",
     "generate_payments.py",
     "generate_inventory.py",
     "generate_promotion_redemptions.py",
