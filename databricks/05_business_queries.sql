@@ -1,5 +1,9 @@
--- Andes Commerce - consultas de negocio sobre Gold
-
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC # 05 - Business Queries
+-- MAGIC
+-- MAGIC Consultas de negocio sobre la capa Gold.
+-- COMMAND ----------
 -- Revenue y margen por categoría
 SELECT
   category,
@@ -9,7 +13,7 @@ SELECT
 FROM mart_sales_by_category
 GROUP BY category
 ORDER BY revenue DESC;
-
+-- COMMAND ----------
 -- Riesgo de inventario
 SELECT
   risk_priority,
@@ -17,7 +21,7 @@ SELECT
 FROM mart_inventory_risk
 GROUP BY risk_priority
 ORDER BY risk_priority;
-
+-- COMMAND ----------
 -- Clientes por valor
 SELECT
   customer_id,
@@ -28,7 +32,7 @@ SELECT
 FROM mart_customer_value
 ORDER BY revenue DESC
 LIMIT 20;
-
+-- COMMAND ----------
 -- Reconciliación de revenue
 SELECT
   ROUND(SUM(revenue_recognized), 2) AS recognized_revenue

@@ -1,17 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 00 - Setup
-# MAGIC 
+# MAGIC
 # MAGIC Este notebook prepara los objetos de Unity Catalog utilizados por Andes Commerce.
-# MAGIC 
+# MAGIC
 # MAGIC - bronze: ingesta y datos cercanos a la fuente
 # MAGIC - silver: datos limpios y tipificados
 # MAGIC - gold: modelos orientados al negocio
 # MAGIC - ops: metadata operacional y controles
 # MAGIC - bronze.raw_files: volumen administrado para cargar los CSV de `data/sample/`
-# MAGIC 
+# MAGIC
 # MAGIC El notebook usa el catálogo por defecto del workspace para evitar hardcodear un nombre de catálogo.
-
+# COMMAND ----------
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
 
 for schema in ["bronze", "silver", "gold", "ops"]:

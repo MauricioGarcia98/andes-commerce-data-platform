@@ -1,13 +1,12 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 01 - Bronze Ingestion
-# MAGIC 
+# MAGIC
 # MAGIC Carga los CSV de la carpeta `data/sample/` a tablas Delta gestionadas en Unity Catalog.
-# MAGIC 
+# MAGIC
 # MAGIC Principio: **Bronze conserva la forma de la fuente lo máximo posible** y agrega metadata operacional.
-
+# COMMAND ----------
 from pyspark.sql import functions as F
-from pyspark.sql.types import *
 
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
 raw_path = f"/Volumes/{catalog}/bronze/raw_files"
@@ -25,9 +24,10 @@ sources = {
 }
 
 run_id = spark.sql("SELECT uuid() AS run_id").first()["run_id"]
-
+# COMMAND ----------
 for table_name, filename in sources.items():
     path = f"{raw_path}/{filename}"
+
     df = (
         spark.read
         .option("header", True)
@@ -40,7 +40,13 @@ for table_name, filename in sources.items():
         .withColumn("_source_file", F.lit(filename))
         .withColumn("_ingestion_run_id", F.lit(run_id))
         .withColumn("_ingested_at_utc", F.current_timestamp())
-        .withColumn("_source_row_hash", F.sha2(F.to_json(F.struct(*[F.col(c) for c in df.columns])), 256))
+        .withColumn(
+            "_source_row_hash",
+            F.sha2(
+                F.to_json(F.struct(*[F.col(c) for c in df.columns])),
+                256
+            )
+        )
     )
 
     (

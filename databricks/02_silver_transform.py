@@ -1,14 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 02 - Silver Transform
-# MAGIC 
+# MAGIC
 # MAGIC Limpieza, tipificación y deduplicación sobre Bronze. El objetivo es producir tablas confiables para Gold.
-
+# COMMAND ----------
 from pyspark.sql import functions as F
-from pyspark.sql.window import Window
 
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
-
+# COMMAND ----------
 # Customers
 customers = spark.table(f"`{catalog}`.`bronze`.customers")
 customers = (
@@ -33,7 +32,7 @@ products = (
     .dropDuplicates(["product_id"])
 )
 products.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.products")
-
+# COMMAND ----------
 # Stores
 stores = spark.table(f"`{catalog}`.`bronze`.stores")
 stores = (
@@ -59,12 +58,14 @@ orders = (
     .dropDuplicates(["order_id"])
 )
 orders.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.orders")
-
+# COMMAND ----------
 # Order items
 items = spark.table(f"`{catalog}`.`bronze`.order_items")
 items = (
     items
     .withColumn("order_item_id", F.trim("order_item_id"))
+    .withColumn("order_id", F.trim("order_id"))
+    .withColumn("product_id", F.trim("product_id"))
     .withColumn("quantity", F.col("quantity").cast("int"))
     .withColumn("unit_price", F.col("unit_price").cast("decimal(18,2)"))
     .withColumn("discount_amount", F.col("discount_amount").cast("decimal(18,2)"))
@@ -73,12 +74,14 @@ items = (
     .dropDuplicates(["order_item_id"])
 )
 items.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.order_items")
-
+# COMMAND ----------
 # Payments
 payments = spark.table(f"`{catalog}`.`bronze`.payments")
 payments = (
     payments
     .withColumn("payment_id", F.trim("payment_id"))
+    .withColumn("order_id", F.trim("order_id"))
+    .withColumn("payment_method", F.upper(F.trim("payment_method")))
     .withColumn("payment_status", F.upper(F.trim("payment_status")))
     .withColumn("amount", F.col("amount").cast("decimal(18,2)"))
     .dropDuplicates(["payment_id"])
@@ -89,14 +92,15 @@ payments.write.format("delta").mode("overwrite").option("overwriteSchema", "true
 inventory = spark.table(f"`{catalog}`.`bronze`.inventory")
 inventory = (
     inventory
+    .withColumn("product_id", F.trim("product_id"))
+    .withColumn("store_id", F.trim("store_id"))
     .withColumn("snapshot_date", F.to_date("snapshot_date"))
     .withColumn("on_hand_qty", F.col("on_hand_qty").cast("int"))
     .withColumn("reorder_point", F.col("reorder_point").cast("int"))
     .withColumn("stock_status", F.upper(F.trim("stock_status")))
-    .dropDuplicates(["product_id", "store_id", "snapshot_date"])
 )
 inventory.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.inventory")
-
+# COMMAND ----------
 # Promotions
 promotions = spark.table(f"`{catalog}`.`bronze`.promotions")
 promotions = (
@@ -105,18 +109,21 @@ promotions = (
     .withColumn("discount_pct", F.col("discount_pct").cast("decimal(5,2)"))
     .withColumn("start_date", F.to_date("start_date"))
     .withColumn("end_date", F.to_date("end_date"))
+    .withColumn("active_flag", F.col("active_flag").cast("boolean"))
     .dropDuplicates(["promotion_id"])
 )
 promotions.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.promotions")
-
+# COMMAND ----------
 # Promotion redemptions
-red = spark.table(f"`{catalog}`.`bronze`.promotion_redemptions")
-red = (
-    red
+redemptions = spark.table(f"`{catalog}`.`bronze`.promotion_redemptions")
+redemptions = (
+    redemptions
     .withColumn("redemption_id", F.trim("redemption_id"))
+    .withColumn("order_id", F.trim("order_id"))
+    .withColumn("promotion_id", F.trim("promotion_id"))
     .withColumn("discount_amount", F.col("discount_amount").cast("decimal(18,2)"))
     .dropDuplicates(["redemption_id"])
 )
-red.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.promotion_redemptions")
+redemptions.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.promotion_redemptions")
 
 print("Silver transformation completed.")
