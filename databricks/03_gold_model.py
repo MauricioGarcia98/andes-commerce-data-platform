@@ -1,9 +1,15 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 03 - Gold Model
 # MAGIC
 # MAGIC Modelos de negocio para análisis. El grain está documentado explícitamente para evitar doble conteo.
+
 # COMMAND ----------
+
 from pyspark.sql import functions as F
 
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
@@ -25,14 +31,18 @@ items = spark.table(f"`{catalog}`.`silver`.order_items")
 payments = spark.table(f"`{catalog}`.`silver`.payments")
 inventory = spark.table(f"`{catalog}`.`silver`.inventory")
 promotions = spark.table(f"`{catalog}`.`silver`.promotions")
+
 # COMMAND ----------
+
 # Dimensions
 save(customers.select(*[c for c in customers.columns if not c.startswith("_")]), "dim_customer")
 save(products.select(*[c for c in products.columns if not c.startswith("_")]), "dim_product")
 save(stores.select(*[c for c in stores.columns if not c.startswith("_")]), "dim_store")
 save(promotions.select(*[c for c in promotions.columns if not c.startswith("_")]), "dim_promotion")
+
 # COMMAND ----------
-# Fact order: 1 row per order
+
+# Fact order: 1 fila por orden
 fact_order = (
     orders.join(
         payments.filter(F.col("payment_status") == "APPROVED").select("order_id", "payment_status"),
@@ -48,31 +58,73 @@ fact_order = (
     )
 )
 save(fact_order, "fact_order")
+
 # COMMAND ----------
+
 # Fact sales line: 1 row per order item
 fact_sales_line = (
     items.join(
-        orders.select("order_id", "customer_id", "store_id", "order_date", "channel", "status"),
+        orders.select(
+            "order_id",
+            "customer_id",
+            "store_id",
+            "order_date",
+            "channel",
+            "status"
+        ),
         "order_id",
         "left"
     )
     .join(
-        products.select("product_id", "category", "unit_cost"),
+        products.select(
+            "product_id",
+            "category",
+            "unit_cost"
+        ),
         "product_id",
+        "left"
+    )
+    .join(
+        payments
+        .filter(F.col("payment_status") == "APPROVED")
+        .select("order_id")
+        .dropDuplicates(["order_id"])
+        .withColumn("payment_approved", F.lit(1)),
+        "order_id",
         "left"
     )
     .withColumn(
         "recognized_revenue",
-        F.when(F.col("status") == "COMPLETED", F.col("net_amount")).otherwise(F.lit(0))
+        F.when(
+            (F.col("status") == "COMPLETED") &
+            (F.col("payment_approved") == 1),
+            F.col("net_amount")
+        ).otherwise(F.lit(0))
     )
-    .withColumn("cost_amount", F.round(F.col("quantity") * F.col("unit_cost"), 2))
-    .withColumn("gross_margin", F.round(F.col("recognized_revenue") - F.col("cost_amount"), 2))
+    .withColumn(
+        "cost_amount",
+        F.round(
+            F.col("quantity") * F.col("unit_cost"),
+            2
+        )
+    )
+    .withColumn(
+        "gross_margin",
+        F.round(
+            F.col("recognized_revenue") - F.col("cost_amount"),
+            2
+        )
+    )
+    .drop("payment_approved")
 )
+
 save(fact_sales_line, "fact_sales_line")
 
 # Inventory snapshot: 1 row per product/store/snapshot_date
 save(inventory, "fact_inventory_snapshot")
+
 # COMMAND ----------
+
 # Sales by category
 sales_by_category = (
     fact_sales_line.groupBy("category")
@@ -93,7 +145,9 @@ sales_by_category = (
     )
 )
 save(sales_by_category, "mart_sales_by_category")
+
 # COMMAND ----------
+
 # Store performance
 store_performance = (
     fact_sales_line.groupBy("store_id")
@@ -114,7 +168,9 @@ store_performance = (
     )
 )
 save(store_performance, "mart_store_performance")
+
 # COMMAND ----------
+
 # Inventory risk
 inventory_risk = (
     inventory
