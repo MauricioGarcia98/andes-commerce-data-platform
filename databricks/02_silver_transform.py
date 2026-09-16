@@ -1,38 +1,52 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 02 - Silver Transform
 # MAGIC
 # MAGIC Limpieza, tipificación y deduplicación sobre Bronze. El objetivo es producir tablas confiables para Gold.
+
 # COMMAND ----------
+
 from pyspark.sql import functions as F
 
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
+
 # COMMAND ----------
+
 # Customers
-customers = spark.table(f"`{catalog}`.`bronze`.customers")
+customers = spark.table(f"`{catalog}`.`bronze`.customers") #lee la tabla bronze customers csv a delta
+#normalizacion de los campos
 customers = (
     customers
-    .withColumn("customer_id", F.trim("customer_id"))
-    .withColumn("email", F.lower(F.trim("email")))
-    .withColumn("signup_date", F.to_date("signup_date"))
-    .withColumn("customer_segment", F.upper(F.trim("customer_segment")))
+    .withColumn("customer_id", F.trim("customer_id")) #elimina espacios
+    .withColumn("email", F.lower(F.trim("email"))) #estandariza lo emails
+    .withColumn("signup_date", F.to_date("signup_date")) #tipicacion de datos 
+    .withColumn("customer_segment", F.upper(F.trim("customer_segment"))) #normaliza domimio
 )
-customers = customers.dropDuplicates(["customer_id"])
+
+customers = customers.dropDuplicates(["customer_id"]) #grain 1 fila por clientes
+#guarda en silver 
 customers.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.customers")
 
 # Products
+#aplica la misma logica de customers
 products = spark.table(f"`{catalog}`.`bronze`.products")
 products = (
     products
     .withColumn("product_id", F.trim("product_id"))
     .withColumn("sku", F.trim("sku"))
-    .withColumn("unit_cost", F.col("unit_cost").cast("decimal(18,2)"))
+    .withColumn("unit_cost", F.col("unit_cost").cast("decimal(18,2)")) #garantiza que el costo sea numericamente apropiado 
     .withColumn("list_price", F.col("list_price").cast("decimal(18,2)"))
     .withColumn("active_flag", F.col("active_flag").cast("boolean"))
     .dropDuplicates(["product_id"])
 )
 products.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.products")
+
 # COMMAND ----------
+
 # Stores
 stores = spark.table(f"`{catalog}`.`bronze`.stores")
 stores = (
@@ -58,7 +72,9 @@ orders = (
     .dropDuplicates(["order_id"])
 )
 orders.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.orders")
+
 # COMMAND ----------
+
 # Order items
 items = spark.table(f"`{catalog}`.`bronze`.order_items")
 items = (
@@ -74,7 +90,9 @@ items = (
     .dropDuplicates(["order_item_id"])
 )
 items.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.order_items")
+
 # COMMAND ----------
+
 # Payments
 payments = spark.table(f"`{catalog}`.`bronze`.payments")
 payments = (
@@ -100,7 +118,9 @@ inventory = (
     .withColumn("stock_status", F.upper(F.trim("stock_status")))
 )
 inventory.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.inventory")
+
 # COMMAND ----------
+
 # Promotions
 promotions = spark.table(f"`{catalog}`.`bronze`.promotions")
 promotions = (
@@ -113,7 +133,9 @@ promotions = (
     .dropDuplicates(["promotion_id"])
 )
 promotions.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"`{catalog}`.`silver`.promotions")
+
 # COMMAND ----------
+
 # Promotion redemptions
 redemptions = spark.table(f"`{catalog}`.`bronze`.promotion_redemptions")
 redemptions = (

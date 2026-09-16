@@ -1,11 +1,17 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 01 - Bronze Ingestion
 # MAGIC
 # MAGIC Carga los CSV de la carpeta `data/sample/` a tablas Delta gestionadas en Unity Catalog.
 # MAGIC
 # MAGIC Principio: **Bronze conserva la forma de la fuente lo máximo posible** y agrega metadata operacional.
+
 # COMMAND ----------
+
 from pyspark.sql import functions as F
 
 catalog = spark.sql("SELECT current_catalog() AS catalog").first()["catalog"]
@@ -24,7 +30,9 @@ sources = {
 }
 
 run_id = spark.sql("SELECT uuid() AS run_id").first()["run_id"]
+
 # COMMAND ----------
+
 for table_name, filename in sources.items():
     path = f"{raw_path}/{filename}"
 
